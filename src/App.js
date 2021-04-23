@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { LoadingOutlined } from "@ant-design/icons";
 import { Input, Row, Col, Button, message, Tabs, Divider } from "antd";
+import { usePageVisibility } from "react-page-visibility";
 import { useCookies } from "react-cookie";
 import ReactInterval from "react-interval";
 import get from "lodash.get";
@@ -12,7 +13,7 @@ import "./App.css";
 const { TabPane } = Tabs;
 
 const STASH_ITEM_API = "character-window/get-stash-items";
-const API_FETCH_INTERVAL = 3000; // 3s
+const API_FETCH_INTERVAL = 5000; // 5s
 const STASH_CELL_SIZE = 48;
 
 const fetchApi = (inputData = {}, setFetching, setFetchedData) => {
@@ -52,6 +53,7 @@ const fetchApi = (inputData = {}, setFetching, setFetchedData) => {
 };
 
 function App() {
+  const isVisible = usePageVisibility();
   const [cookies, setCookie] = useCookies();
   const [inputData, setData] = useState(cookies);
   const [isFetching, setFetching] = useState(false);
@@ -138,7 +140,7 @@ function App() {
           timeout={API_FETCH_INTERVAL}
           enabled
           callback={() => {
-            if (isFetching) {
+            if (isFetching && isVisible) {
               fetchApi(inputData, setFetching, setFetchedData);
             }
           }}
