@@ -15,6 +15,7 @@ const { TabPane } = Tabs;
 const STASH_ITEM_API = "character-window/get-stash-items";
 const API_FETCH_INTERVAL = 5000; // 5s
 const STASH_CELL_SIZE = 48;
+const SET_TO_COMPLETE = 5;
 
 const fetchApi = (inputData = {}, setFetching, setFetchedData) => {
   const { accountName, league, POESESSID, tabIndices } = inputData;
@@ -52,6 +53,84 @@ const fetchApi = (inputData = {}, setFetching, setFetchedData) => {
   });
 };
 
+const checkCompleted = data => {
+  const itemMap = {
+    oneH: [],
+    twoH: [],
+    head: [],
+    body: [],
+    glove: [],
+    feet: [],
+    belt: [],
+    amulet: [],
+    ring: []
+  };
+
+  data.forEach(d => {
+    const { items } = d.data;
+    items.forEach(i => {
+      // Use icon to check type
+      const { icon } = i;
+      const { w, h, x, y } = i;
+      if (
+        icon.includes("/Weapons/OneHandWeapons/") ||
+        icon.includes("/Armours/Shields/")
+      ) {
+        itemMap.oneH.push({ w, h, x, y });
+      } else if (icon.includes("/Weapons/TwoHandWeapons/")) {
+        itemMap.twoH.push({ w, h, x, y });
+      } else if (icon.includes("/Armours/Helmets/")) {
+        itemMap.head.push({ w, h, x, y });
+      } else if (icon.includes("/Armours/BodyArmours/")) {
+        itemMap.body.push({ w, h, x, y });
+      } else if (icon.includes("/Armours/Gloves/")) {
+        itemMap.glove.push({ w, h, x, y });
+      } else if (icon.includes("/Armours/Boots/")) {
+        itemMap.feet.push({ w, h, x, y });
+      } else if (icon.includes("/Belts/")) {
+        itemMap.belt.push({ w, h, x, y });
+      } else if (icon.includes("/Amulets/")) {
+        itemMap.amulet.push({ w, h, x, y });
+      } else if (icon.includes("/Rings/")) {
+        itemMap.ring.push({ w, h, x, y });
+      }
+    });
+  });
+
+  const progressSets = JSON.parse(JSON.stringify(itemMap));
+  const completedSets = [];
+  if (
+    (itemMap.oneH.length >= 2 || itemMap.twoH.length >= 1) &&
+    itemMap.head.length >= 1 &&
+    itemMap.body.length >= 1 &&
+    itemMap.glove.length >= 1 &&
+    itemMap.feet.length >= 1 &&
+    itemMap.belt.length >= 1 &&
+    itemMap.amulet.length >= 1 &&
+    itemMap.ring.length >= 2
+  ) {
+    const newSet = [];
+    newSet.push(itemMap.head.shift());
+    newSet.push(itemMap.body.shift());
+    newSet.push(itemMap.glove.shift());
+    newSet.push(itemMap.feet.shift());
+    newSet.push(itemMap.belt.shift());
+    newSet.push(itemMap.amulet.shift());
+    newSet.push(itemMap.ring.shift());
+    newSet.push(itemMap.ring.shift());
+    if (itemMap.oneH.length >= 2) {
+      newSet.push(itemMap.oneH.shift());
+      newSet.push(itemMap.oneH.shift());
+    } else if (itemMap.twoH.length >= 1) {
+      newSet.push(itemMap.twoH.shift());
+    }
+
+    completedSets.push(newSet);
+  }
+
+  return { progressSets, completedSets };
+};
+
 function App() {
   const isVisible = usePageVisibility();
   const [cookies, setCookie] = useCookies();
@@ -59,7 +138,7 @@ function App() {
   const [isFetching, setFetching] = useState(false);
   const [fetchedData, setFetchedData] = useState([]);
 
-  console.log(fetchedData);
+  const progressDetails = checkCompleted(fetchedData);
 
   return (
     <div className="app">
@@ -146,65 +225,154 @@ function App() {
           }}
         />
       </div>
-      <Tabs defaultActiveKey="1">
-        {fetchedData.map(tabData => {
-          const { tab, data = {} } = tabData;
-          const { items = [] } = data;
-          return (
-            <TabPane tab={get(data, `tabs.${tab}.n`) || ""} key={tab}>
-              <div
-                className="stashGrid"
-                style={{
-                  width: STASH_CELL_SIZE * 12,
-                  height: STASH_CELL_SIZE * 12
-                }}
-              >
-                {items.map(i => (
-                  <img
-                    key={i.id}
-                    src={i.icon}
+      <Row gutter={12}>
+        <Col span={6}>
+          <div className="progress">
+            <h2>Progress</h2>
+            {(() => {
+              const c = [];
+              if (
+                Math.floor(progressDetails.progressSets.oneH.length / 2) +
+                  progressDetails.progressSets.twoH.length <
+                SET_TO_COMPLETE
+              ) {
+                c.push(
+                  <div key="more-oneH">{`1H Weap: ${SET_TO_COMPLETE * 2 -
+                    progressDetails.progressSets.oneH.length -
+                    progressDetails.progressSets.twoH.length * 2} more`}</div>
+                );
+                c.push(
+                  <div key="more-twoH">{`2H Weap: ${SET_TO_COMPLETE -
+                    Math.floor(progressDetails.progressSets.oneH.length / 2) -
+                    progressDetails.progressSets.twoH.length} more`}</div>
+                );
+              }
+              if (progressDetails.progressSets.head.length < SET_TO_COMPLETE) {
+                c.push(
+                  <div key="more-head">{`Head: ${SET_TO_COMPLETE -
+                    progressDetails.progressSets.head.length} more`}</div>
+                );
+              }
+              if (progressDetails.progressSets.body.length < SET_TO_COMPLETE) {
+                c.push(
+                  <div key="more-body">{`Body: ${SET_TO_COMPLETE -
+                    progressDetails.progressSets.body.length} more`}</div>
+                );
+              }
+              if (progressDetails.progressSets.glove.length < SET_TO_COMPLETE) {
+                c.push(
+                  <div key="more-glove">{`Glove: ${SET_TO_COMPLETE -
+                    progressDetails.progressSets.glove.length} more`}</div>
+                );
+              }
+              if (progressDetails.progressSets.feet.length < SET_TO_COMPLETE) {
+                c.push(
+                  <div key="more-feet">{`Feet: ${SET_TO_COMPLETE -
+                    progressDetails.progressSets.feet.length} more`}</div>
+                );
+              }
+              if (progressDetails.progressSets.belt.length < SET_TO_COMPLETE) {
+                c.push(
+                  <div key="more-belt">{`Belt: ${SET_TO_COMPLETE -
+                    progressDetails.progressSets.belt.length} more`}</div>
+                );
+              }
+              if (
+                progressDetails.progressSets.amulet.length < SET_TO_COMPLETE
+              ) {
+                c.push(
+                  <div key="more-amulet">{`Amulet: ${SET_TO_COMPLETE -
+                    progressDetails.progressSets.amulet.length} more`}</div>
+                );
+              }
+              if (
+                progressDetails.progressSets.ring.length <
+                SET_TO_COMPLETE * 2
+              ) {
+                c.push(
+                  <div key="more-ring">{`Ring: ${SET_TO_COMPLETE * 2 -
+                    progressDetails.progressSets.ring.length} more`}</div>
+                );
+              }
+              return c;
+            })()}
+            <Divider />
+            <div>
+              <strong>{`Completed Sets: ${progressDetails.completedSets.length}`}</strong>
+            </div>
+            <div>{`1H Weap: ${progressDetails.progressSets.oneH.length}`}</div>
+            <div>{`2H Weap: ${progressDetails.progressSets.twoH.length}`}</div>
+            <div>{`Head: ${progressDetails.progressSets.head.length}`}</div>
+            <div>{`Body: ${progressDetails.progressSets.body.length}`}</div>
+            <div>{`Glove: ${progressDetails.progressSets.glove.length}`}</div>
+            <div>{`Feet: ${progressDetails.progressSets.feet.length}`}</div>
+            <div>{`Belt: ${progressDetails.progressSets.belt.length}`}</div>
+            <div>{`Amulet: ${progressDetails.progressSets.amulet.length}`}</div>
+            <div>{`Ring: ${progressDetails.progressSets.ring.length}`}</div>
+          </div>
+        </Col>
+        <Col span={18}>
+          <Tabs defaultActiveKey="1">
+            {fetchedData.map(tabData => {
+              const { tab, data = {} } = tabData;
+              const { items = [] } = data;
+              return (
+                <TabPane tab={get(data, `tabs.${tab}.n`) || ""} key={tab}>
+                  <div
+                    className="stashGrid"
                     style={{
-                      position: "absolute",
-                      top: (i.y || 0) * STASH_CELL_SIZE,
-                      left: (i.x || 0) * STASH_CELL_SIZE,
-                      width: (i.w || 1) * STASH_CELL_SIZE,
-                      height: (i.h || 1) * STASH_CELL_SIZE
+                      width: STASH_CELL_SIZE * 12,
+                      height: STASH_CELL_SIZE * 12
                     }}
-                  />
-                ))}
-                {/* Horizontal Grid */}
-                {[...new Array(11)].map((_, i) => (
-                  <Divider
-                    key={i}
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      top: (i + 1) * STASH_CELL_SIZE,
-                      background: "#ccc",
-                      margin: 0
-                    }}
-                  />
-                ))}
-                {/* Vertical Grid */}
-                {[...new Array(11)].map((_, i) => (
-                  <Divider
-                    key={i}
-                    type="vertical"
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: (i + 1) * STASH_CELL_SIZE,
-                      background: "#ccc",
-                      margin: 0,
-                      height: "100%"
-                    }}
-                  />
-                ))}
-              </div>
-            </TabPane>
-          );
-        })}
-      </Tabs>
+                  >
+                    {items.map(i => (
+                      <img
+                        key={i.id}
+                        src={i.icon}
+                        style={{
+                          position: "absolute",
+                          top: (i.y || 0) * STASH_CELL_SIZE,
+                          left: (i.x || 0) * STASH_CELL_SIZE,
+                          width: (i.w || 1) * STASH_CELL_SIZE,
+                          height: (i.h || 1) * STASH_CELL_SIZE
+                        }}
+                      />
+                    ))}
+                    {/* Horizontal Grid */}
+                    {[...new Array(11)].map((_, i) => (
+                      <Divider
+                        key={i}
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          top: (i + 1) * STASH_CELL_SIZE,
+                          background: "#ccc",
+                          margin: 0
+                        }}
+                      />
+                    ))}
+                    {/* Vertical Grid */}
+                    {[...new Array(11)].map((_, i) => (
+                      <Divider
+                        key={i}
+                        type="vertical"
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: (i + 1) * STASH_CELL_SIZE,
+                          background: "#ccc",
+                          margin: 0,
+                          height: "100%"
+                        }}
+                      />
+                    ))}
+                  </div>
+                </TabPane>
+              );
+            })}
+          </Tabs>
+        </Col>
+      </Row>
     </div>
   );
 }
