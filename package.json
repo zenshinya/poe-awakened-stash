@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "proxy": "http://localhost:3001",
+  "author": "Zhenjia",
+  "license": "MIT",
   "dependencies": {
     "@ant-design/icons": "^4.6.2",
     "@testing-library/jest-dom": "^5.11.4",
