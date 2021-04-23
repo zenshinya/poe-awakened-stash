@@ -1,9 +1,16 @@
 .app {
   max-width: 1080px;
-  margin: 32px auto;
+  margin: 12px auto;
+  padding-bottom: 120px;
 }
 
 .startContainer {
   margin-top: 24px;
+  margin-bottom: 24px;
   text-align: center;
+}
+
+.stashGrid {
+  position: relative;
+  border: 1px solid black;
 }
