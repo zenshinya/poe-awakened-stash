@@ -17,6 +17,8 @@ const API_FETCH_INTERVAL = 5000; // 5s
 const STASH_CELL_SIZE = 48;
 const SET_TO_COMPLETE = 5;
 
+const HIGHLIGHT_COLORS = ["red", "green", "blue", "yellow", "purple"];
+
 const fetchApi = (inputData = {}, setFetching, setFetchedData) => {
   const { accountName, league, POESESSID, tabIndices } = inputData;
   if (!accountName || !league || !POESESSID || !tabIndices) {
@@ -71,35 +73,42 @@ const checkCompleted = data => {
     items.forEach(i => {
       // Use icon to check type
       const { icon } = i;
-      const { w, h, x, y } = i;
+      const { w, h, x, y, inventoryId } = i;
+      const required = {
+        w,
+        h,
+        x,
+        y,
+        stash: Number(inventoryId.replace("Stash", "")) - 1
+      };
       if (
         icon.includes("/Weapons/OneHandWeapons/") ||
         icon.includes("/Armours/Shields/")
       ) {
-        itemMap.oneH.push({ w, h, x, y });
+        itemMap.oneH.push(required);
       } else if (icon.includes("/Weapons/TwoHandWeapons/")) {
-        itemMap.twoH.push({ w, h, x, y });
+        itemMap.twoH.push(required);
       } else if (icon.includes("/Armours/Helmets/")) {
-        itemMap.head.push({ w, h, x, y });
+        itemMap.head.push(required);
       } else if (icon.includes("/Armours/BodyArmours/")) {
-        itemMap.body.push({ w, h, x, y });
+        itemMap.body.push(required);
       } else if (icon.includes("/Armours/Gloves/")) {
-        itemMap.glove.push({ w, h, x, y });
+        itemMap.glove.push(required);
       } else if (icon.includes("/Armours/Boots/")) {
-        itemMap.feet.push({ w, h, x, y });
+        itemMap.feet.push(required);
       } else if (icon.includes("/Belts/")) {
-        itemMap.belt.push({ w, h, x, y });
+        itemMap.belt.push(required);
       } else if (icon.includes("/Amulets/")) {
-        itemMap.amulet.push({ w, h, x, y });
+        itemMap.amulet.push(required);
       } else if (icon.includes("/Rings/")) {
-        itemMap.ring.push({ w, h, x, y });
+        itemMap.ring.push(required);
       }
     });
   });
 
   const progressSets = JSON.parse(JSON.stringify(itemMap));
   const completedSets = [];
-  if (
+  while (
     (itemMap.oneH.length >= 2 || itemMap.twoH.length >= 1) &&
     itemMap.head.length >= 1 &&
     itemMap.body.length >= 1 &&
@@ -237,43 +246,64 @@ function App() {
                 SET_TO_COMPLETE
               ) {
                 c.push(
-                  <div key="more-oneH">{`1H Weap: ${SET_TO_COMPLETE * 2 -
+                  <div
+                    key="more-oneH"
+                    style={{ color: "red" }}
+                  >{`1H Weap: ${SET_TO_COMPLETE * 2 -
                     progressDetails.progressSets.oneH.length -
                     progressDetails.progressSets.twoH.length * 2} more`}</div>
                 );
                 c.push(
-                  <div key="more-twoH">{`2H Weap: ${SET_TO_COMPLETE -
+                  <div
+                    key="more-twoH"
+                    style={{ color: "red" }}
+                  >{`2H Weap: ${SET_TO_COMPLETE -
                     Math.floor(progressDetails.progressSets.oneH.length / 2) -
                     progressDetails.progressSets.twoH.length} more`}</div>
                 );
               }
               if (progressDetails.progressSets.head.length < SET_TO_COMPLETE) {
                 c.push(
-                  <div key="more-head">{`Head: ${SET_TO_COMPLETE -
+                  <div
+                    key="more-head"
+                    style={{ color: "red" }}
+                  >{`Head: ${SET_TO_COMPLETE -
                     progressDetails.progressSets.head.length} more`}</div>
                 );
               }
               if (progressDetails.progressSets.body.length < SET_TO_COMPLETE) {
                 c.push(
-                  <div key="more-body">{`Body: ${SET_TO_COMPLETE -
+                  <div
+                    key="more-body"
+                    style={{ color: "red" }}
+                  >{`Body: ${SET_TO_COMPLETE -
                     progressDetails.progressSets.body.length} more`}</div>
                 );
               }
               if (progressDetails.progressSets.glove.length < SET_TO_COMPLETE) {
                 c.push(
-                  <div key="more-glove">{`Glove: ${SET_TO_COMPLETE -
+                  <div
+                    key="more-glove"
+                    style={{ color: "red" }}
+                  >{`Glove: ${SET_TO_COMPLETE -
                     progressDetails.progressSets.glove.length} more`}</div>
                 );
               }
               if (progressDetails.progressSets.feet.length < SET_TO_COMPLETE) {
                 c.push(
-                  <div key="more-feet">{`Feet: ${SET_TO_COMPLETE -
+                  <div
+                    key="more-feet"
+                    style={{ color: "red" }}
+                  >{`Feet: ${SET_TO_COMPLETE -
                     progressDetails.progressSets.feet.length} more`}</div>
                 );
               }
               if (progressDetails.progressSets.belt.length < SET_TO_COMPLETE) {
                 c.push(
-                  <div key="more-belt">{`Belt: ${SET_TO_COMPLETE -
+                  <div
+                    key="more-belt"
+                    style={{ color: "red" }}
+                  >{`Belt: ${SET_TO_COMPLETE -
                     progressDetails.progressSets.belt.length} more`}</div>
                 );
               }
@@ -281,7 +311,10 @@ function App() {
                 progressDetails.progressSets.amulet.length < SET_TO_COMPLETE
               ) {
                 c.push(
-                  <div key="more-amulet">{`Amulet: ${SET_TO_COMPLETE -
+                  <div
+                    key="more-amulet"
+                    style={{ color: "red" }}
+                  >{`Amulet: ${SET_TO_COMPLETE -
                     progressDetails.progressSets.amulet.length} more`}</div>
                 );
               }
@@ -290,7 +323,10 @@ function App() {
                 SET_TO_COMPLETE * 2
               ) {
                 c.push(
-                  <div key="more-ring">{`Ring: ${SET_TO_COMPLETE * 2 -
+                  <div
+                    key="more-ring"
+                    style={{ color: "red" }}
+                  >{`Ring: ${SET_TO_COMPLETE * 2 -
                     progressDetails.progressSets.ring.length} more`}</div>
                 );
               }
@@ -312,7 +348,7 @@ function App() {
           </div>
         </Col>
         <Col span={18}>
-          <Tabs defaultActiveKey="1">
+          <Tabs>
             {fetchedData.map(tabData => {
               const { tab, data = {} } = tabData;
               const { items = [] } = data;
@@ -366,6 +402,28 @@ function App() {
                         }}
                       />
                     ))}
+                    {(() => {
+                      const highlights = [];
+                      progressDetails.completedSets.forEach((cs, csi) => {
+                        cs.forEach(zone => {
+                          if (zone.stash === Number(tab))
+                            highlights.push(
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  background: HIGHLIGHT_COLORS[csi] || "black",
+                                  opacity: 0.3,
+                                  width: zone.w * STASH_CELL_SIZE,
+                                  height: zone.h * STASH_CELL_SIZE,
+                                  top: zone.y * STASH_CELL_SIZE,
+                                  left: zone.x * STASH_CELL_SIZE
+                                }}
+                              />
+                            );
+                        });
+                      });
+                      return highlights;
+                    })()}
                   </div>
                 </TabPane>
               );
